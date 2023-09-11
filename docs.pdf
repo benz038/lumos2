@@ -1,0 +1,197 @@
+
+**Assistant:**
+Absolutely, here is a step-by-step guide to setting up your Flask application (lumos1) with Gunicorn and Nginx on an Ubuntu server:
+
+### Step 1: Set Up Your Environment
+
+*   **Clone your repository:**
+    
+    ```sh
+    git clone your-repo-link
+    ```
+    
+*   **Navigate to your project directory:**
+    
+    ```sh
+    cd lumos1
+    ```
+    
+*   **Create a virtual environment:**
+    
+    ```sh
+    python3 -m venv env
+    ```
+    
+*   **Activate the virtual environment:**
+    
+    ```sh
+    source env/bin/activate
+    ```
+    
+*   **Install the necessary packages:**
+    
+    ```sh
+    pip install -r requirements.txt
+    ```
+    
+
+### Step 2: Test Your Flask Application
+
+*   **Set the FLASK\_APP environment variable:**
+    
+    ```sh
+    export FLASK_APP=main.py
+    ```
+    
+*   **Run the Flask application:**
+    
+    ```sh
+    flask run --host=0.0.0.0
+    ```
+    
+*   **Test the application** by visiting [http://64.227.164.155:5000](http://64.227.164.155:5000) in your web browser.
+
+### Step 3: Set Up Gunicorn
+
+*   **Install Gunicorn:**
+    
+    ```sh
+    pip install gunicorn
+    ```
+    
+*   **Test Gunicorn:**
+    
+    ```sh
+    gunicorn -w 4 -b 127.0.0.1:8000 main:app
+    ```
+    
+
+### Step 4: Configure Systemd Service
+
+*   **Move your project to /var/www/:**
+    
+    ```sh
+    sudo mv ~/lumos1 /var/www/
+    ```
+    
+*   **Change the ownership of the project directory:**
+    
+    ```sh
+    sudo chown -R www-data:www-data /var/www/lumos1
+    ```
+    
+*   **Create a systemd service file:**
+    
+    ```sh
+    sudo nano /etc/systemd/system/lumos.service
+    ```
+    
+*   **Add the following content to the file:**
+    
+    ```sh
+    [Unit]
+    Description=Gunicorn instance to serve lumos
+    After=network.target
+    
+    [Service]
+    User=www-data
+    Group=www-data
+    WorkingDirectory=/var/www/lumos1
+    Environment="PATH=/var/www/lumos1/env/bin"
+    ExecStart=/var/www/lumos1/env/bin/gunicorn --workers 4 --bind unix:lumos1.sock -m 007 main:app
+    
+    [Install]
+    WantedBy=multi-user.target
+    ```
+    
+*   **Enable and start the service:**
+    
+    ```sh
+    sudo systemctl enable lumos.service
+    sudo systemctl start lumos.service
+    ```
+    
+
+### Step 5: Set Up Nginx
+
+*   **Install Nginx:**
+    
+    ```sh
+    sudo apt update
+    sudo apt install nginx
+    ```
+    
+*   **Create a new server block file:**
+    
+    ```sh
+    sudo nano /etc/nginx/sites-available/lumos1
+    ```
+    
+*   **Add the following configuration to the file:**
+    
+    ```sh
+    server {
+        listen 80;
+        server_name 64.227.164.155;
+    
+        location = /favicon.ico { access_log off; log_not_found off; }
+        location /static/ {
+            root /var/www/lumos1;
+        }
+    
+        location / {
+            include proxy_params;
+            proxy_pass http://unix:/var/www/lumos1/lumos1.sock;
+        }
+    }
+    ```
+    
+*   **Create a symbolic link to the file in the sites-enabled directory:**
+    
+    ```sh
+    sudo ln -s /etc/nginx/sites-available/lumos1 /etc/nginx/sites-enabled
+    ```
+    
+*   **Test the Nginx configuration:**
+    
+    ```sh
+    sudo nginx -t
+    ```
+    
+*   **Restart Nginx:**
+    
+    ```sh
+    sudo systemctl restart nginx
+    ```
+    
+
+### Step 6: Final Steps
+
+*   **Open your web browser and visit your server's IP address** to see if your Flask application is running:
+    
+    ```arduino
+    http://64.227.164.155
+    ```
+    
+*   **Check the status of your services and view logs using the following commands:**
+    
+    ```sh
+    sudo systemctl status lumos.service
+    sudo systemctl status nginx
+    sudo journalctl -u lumos.service
+    sudo journalctl -u nginx
+    ```
+    
+
+### Conclusion
+
+Your Flask application should now be up and running with Gunicorn and Nginx. Remember to configure your firewall appropriately to allow traffic on port 80. You can also set up SSL for your site to secure the traffic. Let me know if you have any questions or run into issues!
+
+***
+
+**Human:**
+
+
+***
+
+Exported on September 9, 2023 11:54 PM.
